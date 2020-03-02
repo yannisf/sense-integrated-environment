@@ -14,10 +14,10 @@ lazy val assemblySettings = Seq(
 )
 
 lazy val root = (project in file("."))
+  .enablePlugins(JavaAppPackaging)
   .settings(
     name := "home-consumer",
-    libraryDependencies += Dependencies.kafka,
-    libraryDependencies += Dependencies.influx,
+    libraryDependencies ++= Dependencies.camel,
     libraryDependencies += Dependencies.config,
     libraryDependencies ++= Dependencies.logging
   )

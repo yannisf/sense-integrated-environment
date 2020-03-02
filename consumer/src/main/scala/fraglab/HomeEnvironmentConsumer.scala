@@ -1,66 +1,51 @@
 package fraglab
 
-import java.time.Duration
-import java.util.Properties
-import java.util.concurrent.TimeUnit
-
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer}
-import org.apache.kafka.common.serialization.StringDeserializer
-import org.influxdb.dto.Point
+import org.apache.camel.Predicate
+import org.apache.camel.builder.RouteBuilder
+import org.apache.camel.impl.DefaultCamelContext
+import org.apache.camel.support.SimpleRegistry
+import org.apache.camel.support.builder.PredicateBuilder
 import org.influxdb.{BatchOptions, InfluxDBFactory}
-
-import scala.collection.JavaConverters._
 
 object HomeEnvironmentConsumer extends LazyLogging with App {
 
   val conf = ConfigFactory.load.getConfig("config")
-  val props = new Properties()
-  props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, conf.getString("kafka.broker"))
-  props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
-  props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)
-  props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-  props.put(ConsumerConfig.GROUP_ID_CONFIG, conf.getString("kafka.group"))
 
-  val consumer = new KafkaConsumer(props)
-  val topics = List(conf.getString("kafka.topic"))
-
+  val influxDbBeanName = "influxDbBean"
   val influxDB = InfluxDBFactory.connect(conf.getString("influx.server"))
-  val dbName = conf.getString("influx.dbname")
-  influxDB.setDatabase(dbName)
-  influxDB.enableBatch(BatchOptions.DEFAULTS)
+  private val batchOptions: BatchOptions = BatchOptions.DEFAULTS
+    .actions(conf.getInt("influx.batchSize"))
+    .flushDuration(conf.getInt("influx.flushMillis"))
+    .bufferLimit(10000)
+  influxDB.enableBatch(batchOptions)
 
-  try {
-    consumer.subscribe(topics.asJava)
-    while (true) {
-      val records = consumer.poll(Duration.ofSeconds(10L))
-      for (record <- records.asScala) {
-        val value = record.value.toString.split(",")
-        logger.info(s"$value")
-        val timestamp = value(0).toLong
-        val room = value(1)
-        val sensor = value(2)
-        val serial = value(3)
-        val humidityRaw = value(4)
-        val temperatureRaw = value(5)
+  val registry = new SimpleRegistry()
+  registry.bind(influxDbBeanName, influxDB)
 
-        if (humidityRaw != "None" && temperatureRaw != "None") {
-          influxDB.write(Point.measurement(conf.getString("influx.measurement"))
-            .time(timestamp, TimeUnit.MILLISECONDS)
-            .tag("room", room)
-            .tag("sensor", sensor)
-            .tag("serial", serial)
-            .addField("humidity", humidityRaw.toDouble)
-            .addField("temperature", temperatureRaw.toDouble)
-            .build())
-        }
-      }
-    }
-  } catch {
-    case e: Exception => logger.error("Error: ", e)
-  } finally {
-    consumer.close()
-    influxDB.close()
-  }
+  val context = new DefaultCamelContext(registry)
+  context.getTypeConverterRegistry.addTypeConverters(new LineToPointConverter())
+  context.addRoutes(new RouteBuilder() {
+
+    private val fromKafka = s"kafka:${conf.getString("kafka.topic")}?" +
+      s"brokers=${conf.getString("kafka.broker")}&" +
+      s"groupId=${conf.getString("kafka.group")}&" +
+      s"autoOffsetReset=earliest"
+
+    private val toInfluxDb = s"influxdb://$influxDbBeanName?" +
+      s"databaseName=${conf.getString("influx.dbname")}&" +
+      s"retentionPolicy=autogen"
+
+    val notContainsNone: Predicate = PredicateBuilder.not(bodyAs(classOf[String]).contains("None"))
+
+    override def configure(): Unit =
+      from(fromKafka)
+        .log("Received: ${body}")
+        .filter(notContainsNone)
+        .to(toInfluxDb)
+  })
+  context.start()
+
+  Thread.currentThread.join()
 }
