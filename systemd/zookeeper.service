@@ -1,0 +1,17 @@
+[Unit]
+Description=Zookeeper daemon service
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=forking
+WorkingDirectory=/opt/zookeeper
+ExecStart=/opt/zookeeper/bin/zkServer.sh start /opt/zookeeper/conf/zoo.cfg
+ExecStop=/opt/zookeeper/bin/zkServer.sh stop /opt/zookeeper/conf/zoo.cfg
+ExecReload=/opt/zookeeper/bin/zkServer.sh restart /opt/zookeeper/conf/zoo.cfg
+Restart=on-failure
+User=zk
+Group=zk
+
+[Install]
+WantedBy=default.target

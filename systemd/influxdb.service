@@ -1,0 +1,11 @@
+[Unit]
+Description=InfluxDB systemd service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/influxdb/usr/bin/influxd run -config /opt/influxdb/etc/influxdb/influxdb.conf
+
+[Install]
+WantedBy=multi-user.target

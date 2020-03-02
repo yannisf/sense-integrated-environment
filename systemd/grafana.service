@@ -1,0 +1,11 @@
+[Unit]
+Description=Grafana systemd service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/grafana/bin/grafana-server -homepath /opt/grafana
+
+[Install]
+WantedBy=multi-user.target

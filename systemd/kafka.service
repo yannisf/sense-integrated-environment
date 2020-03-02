@@ -1,0 +1,14 @@
+[Unit]
+Description=Kafka systemd service
+Wants=network-online.target zookeeper.service
+After=network-online.target zookeeper.service
+Requires=zookeeper.service
+
+[Service]
+Type=simple
+ExecStart=/opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties
+Restart=on-failure
+Environment=KAFKA_HEAP_OPTS="-Xmx512M -Xms512M"
+
+[Install]
+WantedBy=multi-user.target

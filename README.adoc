@@ -1,0 +1,26 @@
+= Home sensors
+
+Monitor your home's temperature and humidity.
+
+This project is an overengineered endavour to install at home, using several Raspberry Pi, a set of temperature and humidity sensors and all required software to record, monitor and analyze the data they produce
+
+== Hardware
+
+- Raspbery Pi 4 (at least with 2GB of RAM)
+- DHT11 or DHT22 sensors
+- Several other Raspberry Pi (anyone will do)
+
+== Software
+
+- Apache Kafka
+- InfluxDB
+- Grafana
+
+== Outline
+
+- Install Java
+- Install Kafka
+- Install Grafana
+- Install InfluxDB
+- Run data stream consumer
+- Run the sensor script

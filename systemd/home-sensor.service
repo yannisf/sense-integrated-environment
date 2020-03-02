@@ -1,0 +1,10 @@
+[Unit]
+Description=Home sensor service for temperature and humidity
+
+[Service]
+WorkingDirectory=/opt/home-sensors
+ExecStart=/opt/home-sensors/env.py -s kids
+User=yannis
+
+[Install]
+WantedBy=multi-user.target

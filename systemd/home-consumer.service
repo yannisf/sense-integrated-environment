@@ -1,0 +1,12 @@
+[Unit]
+Description=Sensor stream home consumer
+Wants=network-online.target kafka.service influxdb.service
+After=network-online.target kafka.service influxdb.service
+
+[Service]
+Type=simple
+ExecStart=java -jar /opt/home-sensors/home-consumer.jar
+User=yannis
+
+[Install]
+WantedBy=multi-user.target
