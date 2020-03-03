@@ -1,12 +1,10 @@
-name: Diceware CI
+name: Home Consumer
 
-on: [push]
+on:
   push:
     paths:
       - 'home-consumer/**'
 jobs:
-  job1:
-    name: Create package
   build:
     runs-on: ubuntu-latest
     steps:
@@ -17,3 +15,4 @@ jobs:
           java-version: 1.11
       - name: Package
         run: sbt universal:packageBin
+        working-directory: ./home-consumer
