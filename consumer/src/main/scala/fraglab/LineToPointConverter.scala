@@ -6,6 +6,9 @@ import com.typesafe.config.ConfigFactory
 import org.apache.camel.{Converter, TypeConverters}
 import org.influxdb.dto.Point
 
+/**
+ * Camel converter, from sensor status line to InfluxDB point.
+ */
 class LineToPointConverter extends TypeConverters {
 
   private val measurement = ConfigFactory.load.getConfig("config").getString("influx.measurement")
