@@ -11,6 +11,7 @@ import org.influxdb.dto.Point
  */
 class LineToPointConverter extends TypeConverters {
 
+
   private val measurement = ConfigFactory.load.getConfig("config").getString("influx.measurement")
 
   @Converter
