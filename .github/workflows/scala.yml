@@ -16,3 +16,7 @@ jobs:
       - name: Package
         run: sbt universal:packageBin
         working-directory: ./consumer
+      - uses: actions/upload-artifact@v1
+        with:
+          name: home-consumer
+          path: ./consumer/target/universal/home-consumer-0.2.0-SNAPSHOT.zip
